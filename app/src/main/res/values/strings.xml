@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Karia Inventory App</string>
+    <string name="add_item_title">Add Item</string>
+    <string name="edit_item_title">Edit Item</string>
+    <string name="item_details_title">Item Details</string>
+    <string name="item_entry_title">Item Entry</string>
+    <string name="no_item_description">No items in inventory. Add some!</string>
+    <string name="item_name_req">Item Name *</string>
+    <string name="item_price_req">Item Price *</string>
+    <string name="quantity_req">Quantity *</string>
+    <string name="save_action">Save</string>
+    <string name="quantity_available">Quantity Available: %1$d</string>
+    <string name="out_of_stock">Out of Stock</string>
+    <string name="sell_action">Sell</string>
+    <string name="delete_action">Delete</string>
+    <string name="delete_title">Are you sure?</string>
+    <string name="delete_question">Are you sure you want to delete this item? This action cannot be undone.</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+</resources>

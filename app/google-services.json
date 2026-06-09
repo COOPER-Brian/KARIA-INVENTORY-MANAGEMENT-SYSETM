@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "278910079257",
+    "project_id": "kariainventoryapp",
+    "storage_bucket": "kariainventoryapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:278910079257:android:53abd40839e18dacda7588",
+        "android_client_info": {
+          "package_name": "com.example.kariainventoryapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-pWWOQf9EJ2RedhfIPBMKJ2_FUcBChuo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
