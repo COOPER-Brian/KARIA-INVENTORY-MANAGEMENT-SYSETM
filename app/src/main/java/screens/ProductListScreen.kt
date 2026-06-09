@@ -21,10 +21,10 @@ fun ProductListScreen(
     val branch = AppState.selectedBranch
     val currentUserRole = AppState.userRole
 
-    // Using a mutable State list so Compose re-renders instantly on background change
+    // Using a mutable State list so Compose re-renders instantly
     var products by remember { mutableStateOf(listOf<Product>()) }
 
-    // ✅ FIXED: DisposableEffect attaches a live listener and cleans up gracefully when leaving
+   // Listener to live
     DisposableEffect(branch?.branchId) {
         if (branch?.branchId == null) {
             onDispose { }
@@ -37,14 +37,14 @@ fun ProductListScreen(
                         return@addSnapshotListener
                     }
 
-                    // Live data map: Automatically updates whenever quantities decrement!
+                    // Live data map
                     products = snapshot.documents.mapNotNull { doc ->
                         val p = doc.toObject(Product::class.java)
                         p?.copy(productId = doc.id)
                     }
                 }
 
-            // Unbind listeners safely to avoid memory leaks or query churn
+            // Unbind listeners safely to avoid memory leaks 
             onDispose {
                 listenerRegistration.remove()
             }
@@ -75,7 +75,7 @@ fun ProductListScreen(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(text = product.name, style = MaterialTheme.typography.titleMedium)
 
-                        // 📊 This text updates live on the UI as soon as changes occur in Firebase
+                        // updates live on the UI as changes occur in Firebase
                         Text(text = "Qty: ${product.quantity}", style = MaterialTheme.typography.bodyMedium)
                         Text(text = "Price: KSh ${product.price}", style = MaterialTheme.typography.bodyMedium)
 
