@@ -17,7 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun StockScreen(
     navController: NavController,
     productId: String,
-    initialQty: Int // Renamed to clarify it's just a fallback starting point
+    initialQty: Int 
 ) {
     val repo = ProductRepository()
     val context = LocalContext.current
