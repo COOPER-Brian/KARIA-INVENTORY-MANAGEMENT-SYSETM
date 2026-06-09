@@ -12,7 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun AnalyticsScreen() {
 
     val firestore = FirebaseFirestore.getInstance()
-    val branch = AppState.selectedBranch // 🏢 Get the currently active branch context
+    val branch = AppState.selectedBranch
 
     var totalProducts by remember { mutableStateOf(0) }
     var totalStock by remember { mutableStateOf(0) }
@@ -76,7 +76,7 @@ fun AnalyticsScreen() {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 📦 Total unique products card
+        // Total unique products card
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 Text(
@@ -88,7 +88,7 @@ fun AnalyticsScreen() {
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 📊 Total physical volume inventory sum
+        //  Total physical volume inventory sum
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 Text(
