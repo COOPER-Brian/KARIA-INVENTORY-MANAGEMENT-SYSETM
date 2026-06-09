@@ -4,26 +4,41 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.kariainventoryapp.AppState
 import com.example.kariainventoryapp.repository.ProductRepository
+import com.google.firebase.firestore.FirebaseFirestore
 
-// 1. THE STOCK UPDATE SCREEN
+//  THE REAL-TIME STOCK UPDATE SCREEN
 @Composable
 fun StockScreen(
     navController: NavController,
     productId: String,
-    currentQty: Int
+    initialQty: Int // Renamed to clarify it's just a fallback starting point
 ) {
     val repo = ProductRepository()
     val context = LocalContext.current
     val branch = AppState.selectedBranch
+    val firestore = FirebaseFirestore.getInstance()
 
-    var quantity by remember { mutableStateOf(currentQty.toString()) }
+    // Dynamic state that hooks into our snapshot listener
+    var liveQty by remember { mutableStateOf(initialQty) }
+    var quantityInput by remember { mutableStateOf(initialQty.toString()) }
+
+    // Listen to Firestore live updates for this product
+    DisposableEffect(productId) {
+        val listener = firestore.collection("products").document(productId)
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null && snapshot.exists()) {
+                    val dbQty = snapshot.getLong("quantity")?.toInt() ?: initialQty
+                    liveQty = dbQty
+                }
+            }
+        onDispose { listener.remove() }
+    }
 
     Column(
         modifier = Modifier
@@ -36,13 +51,13 @@ fun StockScreen(
         )
 
         Spacer(Modifier.height(20.dp))
-        Text("Current Stock: $currentQty")
+        Text("Current Live Stock: $liveQty")
         Text("Branch: ${branch?.branchName ?: "No branch selected"}")
         Spacer(Modifier.height(20.dp))
 
         OutlinedTextField(
-            value = quantity,
-            onValueChange = { quantity = it },
+            value = quantityInput,
+            onValueChange = { quantityInput = it },
             label = { Text("New Quantity") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -51,7 +66,7 @@ fun StockScreen(
 
         Button(
             onClick = {
-                val newQty = quantity.toIntOrNull()
+                val newQty = quantityInput.toIntOrNull()
 
                 if (branch == null) {
                     Toast.makeText(context, "Select branch first", Toast.LENGTH_SHORT).show()
@@ -66,7 +81,7 @@ fun StockScreen(
                 repo.updateStock(
                     productId = productId,
                     newQuantity = newQty,
-                    oldQuantity = currentQty,
+                    oldQuantity = liveQty,
                     branchId = branch.branchId,
                     onComplete = { success: Boolean, msg: String? ->
                         if (success) {
@@ -85,23 +100,38 @@ fun StockScreen(
     }
 }
 
-// 2. THE BUY/CANCEL PRODUCT SCREEN
+//  THE BUYING SCREEN
 @Composable
 fun BuyProductScreen(
     navController: NavController,
     productId: String,
-    currentQty: Int,
+    initialQty: Int,
     unitPrice: Double,
     productName: String
 ) {
     val repo = ProductRepository()
     val context = LocalContext.current
     val branch = AppState.selectedBranch
+    val firestore = FirebaseFirestore.getInstance()
 
+    // Dynamic variable linked directly to your database state
+    var liveQty by remember { mutableStateOf(initialQty) }
     var buyQuantityInput by remember { mutableStateOf("1") }
 
     val enteredQty = buyQuantityInput.toIntOrNull() ?: 0
     val totalCost = enteredQty * unitPrice
+
+    // Listen to Firestore live updates for this product
+    DisposableEffect(productId) {
+        val listener = firestore.collection("products").document(productId)
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null && snapshot.exists()) {
+                    val dbQty = snapshot.getLong("quantity")?.toInt() ?: initialQty
+                    liveQty = dbQty
+                }
+            }
+        onDispose { listener.remove() }
+    }
 
     Column(
         modifier = Modifier
@@ -114,7 +144,7 @@ fun BuyProductScreen(
         )
 
         Spacer(Modifier.height(20.dp))
-        Text("Available Stock: $currentQty units")
+        Text("Available Live Stock: $liveQty units")
         Text("Unit Price: KSh $unitPrice")
         Text("Branch: ${branch?.branchName ?: "No branch selected"}")
         Spacer(Modifier.height(20.dp))
@@ -136,7 +166,6 @@ fun BuyProductScreen(
 
         Spacer(Modifier.height(30.dp))
 
-        //  CONFIRM AND BUY THE PRODUCT
         Button(
             onClick = {
                 if (branch == null) {
@@ -144,17 +173,18 @@ fun BuyProductScreen(
                     return@Button
                 }
 
-                if (enteredQty <= 0 || enteredQty > currentQty) {
+                // Compares seamlessly against our real-time variable
+                if (enteredQty <= 0 || enteredQty > liveQty) {
                     Toast.makeText(context, "Invalid quantity selection", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
-                val remainingQty = currentQty - enteredQty
+                val remainingQty = liveQty - enteredQty
 
                 repo.updateStock(
                     productId = productId,
                     newQuantity = remainingQty,
-                    oldQuantity = currentQty,
+                    oldQuantity = liveQty,
                     branchId = branch.branchId,
                     onComplete = { success: Boolean, msg: String? ->
                         if (success) {
@@ -166,7 +196,7 @@ fun BuyProductScreen(
                     }
                 )
             },
-            enabled = enteredQty in 1..currentQty,
+            enabled = enteredQty in 1..liveQty,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Confirm Purchase")
@@ -174,7 +204,6 @@ fun BuyProductScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // CANCEL THE PRODUCT SELECTED
         OutlinedButton(
             onClick = {
                 buyQuantityInput = ""

@@ -1,6 +1,7 @@
 package com.example.kariainventoryapp.repository
 
 import com.example.kariainventoryapp.models.Product
+import com.example.kariainventoryapp.models.StockHistory
 import com.google.firebase.firestore.FirebaseFirestore
 
 class ProductRepository {
@@ -76,7 +77,7 @@ class ProductRepository {
         }
     }
 
-    // STOCK SCREEN MANIPULATION METHOD (Fills the Unresolved Reference)
+    //  UPDATE STOCK METHOD
     fun updateStock(
         productId: String,
         newQuantity: Int,
@@ -88,7 +89,27 @@ class ProductRepository {
             .document(productId)
             .update("quantity", newQuantity)
             .addOnSuccessListener {
-                onComplete(true, null)
+
+                //   history tracking model schema
+                val historyEntry = StockHistory(
+                    productId = productId,
+                    branchId = branchId,
+                    oldQuantity = oldQuantity,
+                    newQuantity = newQuantity,
+                    changeType = if (newQuantity < oldQuantity) "SALE" else "RESTOCK",
+                    changedAt = System.currentTimeMillis() // Feeds your formatTime Long converter
+                )
+
+                //   stock_history collection
+                firestore.collection("stock_history")
+                    .add(historyEntry)
+                    .addOnSuccessListener {
+                        onComplete(true, null)
+                    }
+                    .addOnFailureListener { exception ->
+                        // Still return true because the product stock did update successfully
+                        onComplete(true, "Stock updated, but history log failed: ${exception.message}")
+                    }
             }
             .addOnFailureListener { exception ->
                 onComplete(false, exception.message)

@@ -135,7 +135,7 @@ fun AppNavigation() {
             }
         }
 
-        // EDIT PRODUCT ROUTE
+        // EDIT / ADD PRODUCT ROUTE
         composable(
             route = "add_product_screen?productId={productId}",
             arguments = listOf(
@@ -151,7 +151,8 @@ fun AppNavigation() {
 
             if (branch == null) {
                 Toast.makeText(context, "Please select a branch first", Toast.LENGTH_SHORT).show()
-                navController.navigate("admin_dashboard")
+
+                navController.popBackStack("admin_dashboard", inclusive = false)
             } else {
                 AddProductScreen(
                     branchId = branch.branchId,
@@ -160,7 +161,7 @@ fun AppNavigation() {
             }
         }
 
-    //  PRODUCT LIST
+        //  PRODUCT LIST
         composable(
             route = "product_list?isBuyMode={isBuyMode}",
             arguments = listOf(
@@ -202,7 +203,7 @@ fun AppNavigation() {
             BuyProductScreen(
                 navController = navController,
                 productId = productId,
-                currentQty = currentQty,
+                initialQty = currentQty,
                 unitPrice = unitPrice,
                 productName = productName
             )
@@ -235,7 +236,7 @@ fun AppNavigation() {
             StockScreen(
                 navController = navController,
                 productId = productId,
-                currentQty = currentQty
+                initialQty = currentQty
             )
         }
     }

@@ -15,31 +15,38 @@ import com.google.firebase.firestore.FirebaseFirestore
 @Composable
 fun ProductListScreen(
     navController: NavController,
-    isBuyMode: Boolean = false // New flag to distinguish View vs Buy
+    isBuyMode: Boolean = false
 ) {
     val firestore = FirebaseFirestore.getInstance()
     val branch = AppState.selectedBranch
     val currentUserRole = AppState.userRole
 
+    // Using a mutable State list so Compose re-renders instantly on background change
     var products by remember { mutableStateOf(listOf<Product>()) }
 
+    // ✅ FIXED: DisposableEffect attaches a live listener and cleans up gracefully when leaving
     DisposableEffect(branch?.branchId) {
         if (branch?.branchId == null) {
             onDispose { }
         } else {
-            val listener = firestore.collection("products")
+            // Establish a live snapshot channel bound to this specific branch ID
+            val listenerRegistration = firestore.collection("products")
                 .whereEqualTo("branchId", branch.branchId)
-                .addSnapshotListener { snapshot, _ ->
-                    if (snapshot != null) {
-                        products = snapshot.documents.mapNotNull { doc ->
-                            val p = doc.toObject(Product::class.java)
-                            p?.copy(productId = doc.id) ?: p
-                        }
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null || snapshot == null) {
+                        return@addSnapshotListener
+                    }
+
+                    // Live data map: Automatically updates whenever quantities decrement!
+                    products = snapshot.documents.mapNotNull { doc ->
+                        val p = doc.toObject(Product::class.java)
+                        p?.copy(productId = doc.id)
                     }
                 }
 
+            // Unbind listeners safely to avoid memory leaks or query churn
             onDispose {
-                listener.remove()
+                listenerRegistration.remove()
             }
         }
     }
@@ -49,7 +56,6 @@ fun ProductListScreen(
             .fillMaxSize()
             .padding(20.dp)
     ) {
-
         val titleText = if (currentUserRole.lowercase() == "admin") "Manage Products"
         else if (isBuyMode) "Purchase Items"
         else "View Product Catalog"
@@ -68,10 +74,11 @@ fun ProductListScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(text = product.name, style = MaterialTheme.typography.titleMedium)
-                        Text(text = "Qty: ${product.quantity}")
-                        Text(text = "Price: KSh ${product.price}")
 
-                        // 👥 REGULAR USER: Only show "Buy Product" if they explicitly tapped the Buy tab
+                        // 📊 This text updates live on the UI as soon as changes occur in Firebase
+                        Text(text = "Qty: ${product.quantity}", style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "Price: KSh ${product.price}", style = MaterialTheme.typography.bodyMedium)
+
                         if (currentUserRole.lowercase() != "admin" && isBuyMode) {
                             Spacer(modifier = Modifier.height(10.dp))
                             Button(
@@ -84,7 +91,6 @@ fun ProductListScreen(
                             }
                         }
 
-                        // ADMIN ROLES
                         if (currentUserRole.lowercase() == "admin") {
                             Spacer(modifier = Modifier.height(10.dp))
                             Row(
