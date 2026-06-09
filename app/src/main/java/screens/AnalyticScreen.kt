@@ -38,7 +38,7 @@ fun AnalyticsScreen() {
                             val qty = doc.getLong("quantity")?.toInt() ?: 0
                             stockSum += qty
 
-                            // Low stock threshold rule (<= 5)
+                            // Low stock threshold rule 
                             if (qty <= 5) {
                                 lowStock++
                             }
